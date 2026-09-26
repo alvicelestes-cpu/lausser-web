@@ -54,6 +54,16 @@ interface StoreContextType {
   updateCampaignConfig: (config: Partial<CampaignConfig>) => void;
   resetToDefaults: () => void;
   
+  // Admin Authentication & Security
+  isAdminAuthenticated: boolean;
+  isAdminLoginOpen: boolean;
+  setIsAdminLoginOpen: (open: boolean) => void;
+  loginAdmin: (password: string) => boolean;
+  logoutAdmin: () => void;
+  changeAdminPassword: (currentPass: string, newPass: string) => { success: boolean; message: string };
+  resetAdminPassword: () => void;
+  defaultAdminPassword: string;
+
   // Toast notifications
   showToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
   removeToast: (id: string) => void;
@@ -65,7 +75,11 @@ const STORAGE_KEYS = {
   PRODUCTS: 'lausser_products_v1',
   CAMPAIGN: 'lausser_campaign_v1',
   CART: 'lausser_cart_v1',
+  ADMIN_PASSWORD: 'lausser_admin_password_v1',
+  ADMIN_AUTH: 'lausser_admin_auth_v1',
 };
+
+const DEFAULT_ADMIN_PASSWORD = 'Lausser2026*';
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Load products from localStorage or defaults
@@ -110,6 +124,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isMagazineOrderOpen, setIsMagazineOrderOpen] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
+
+  // Admin authentication state
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+    } catch (e) {
+      console.error('Failed to read admin auth from sessionStorage', e);
+      return false;
+    }
+  });
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
 
   // Sync to localStorage
   useEffect(() => {
@@ -274,6 +299,74 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Datos reiniciados a los valores de prueba', 'info');
   };
 
+  // Admin Security & Authentication Methods
+  const getStoredAdminPassword = (): string => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_PASSWORD);
+      if (saved) return saved;
+    } catch (e) {
+      console.error('Failed to read admin password', e);
+    }
+    return DEFAULT_ADMIN_PASSWORD;
+  };
+
+  const loginAdmin = (password: string): boolean => {
+    const currentSaved = getStoredAdminPassword();
+    if (password === currentSaved) {
+      setIsAdminAuthenticated(true);
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      } catch (e) {
+        console.error('Failed to save admin auth to sessionStorage', e);
+      }
+      return true;
+    }
+    return false;
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminAuthenticated(false);
+    try {
+      sessionStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+    } catch (e) {
+      console.error('Failed to clear admin auth', e);
+    }
+    if (currentTab === 'admin') {
+      setCurrentTab('inmediata');
+    }
+    if (window.location.hash === '#admin') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    showToast('Sesión de administración cerrada', 'info');
+  };
+
+  const changeAdminPassword = (currentPass: string, newPass: string): { success: boolean; message: string } => {
+    const currentSaved = getStoredAdminPassword();
+    if (currentPass !== currentSaved) {
+      return { success: false, message: 'La contraseña actual no es correcta.' };
+    }
+    if (!newPass || newPass.trim().length < 6) {
+      return { success: false, message: 'La nueva contraseña debe tener mínimo 6 caracteres.' };
+    }
+    try {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_PASSWORD, newPass);
+      showToast('Contraseña de administración actualizada', 'success');
+      return { success: true, message: 'Contraseña actualizada con éxito.' };
+    } catch (e) {
+      console.error('Failed to save new password', e);
+      return { success: false, message: 'Error al guardar la contraseña en este dispositivo.' };
+    }
+  };
+
+  const resetAdminPassword = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.ADMIN_PASSWORD);
+      showToast(`Contraseña restablecida a la de fábrica (${DEFAULT_ADMIN_PASSWORD})`, 'info');
+    } catch (e) {
+      console.error('Failed to reset password', e);
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -307,6 +400,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clearAllProducts,
         updateCampaignConfig,
         resetToDefaults,
+        isAdminAuthenticated,
+        isAdminLoginOpen,
+        setIsAdminLoginOpen,
+        loginAdmin,
+        logoutAdmin,
+        changeAdminPassword,
+        resetAdminPassword,
+        defaultAdminPassword: DEFAULT_ADMIN_PASSWORD,
         showToast,
         removeToast,
       }}

@@ -13,7 +13,8 @@ export const StockModule: React.FC = () => {
     searchQuery, 
     setSearchQuery, 
     setActiveBrand, 
-    setActiveCategory 
+    setActiveCategory,
+    setIsMagazineOrderOpen
   } = useStore();
 
   // Filter products by brand, category, and search query
@@ -146,7 +147,6 @@ export const StockModule: React.FC = () => {
         </div>
         <button
           onClick={() => {
-            const { setIsMagazineOrderOpen } = useStore();
             setIsMagazineOrderOpen(true);
           }}
           className="w-full sm:w-auto px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold shrink-0 shadow-sm transition-all"

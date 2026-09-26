@@ -9,7 +9,13 @@ import {
   Zap, 
   BookOpen, 
   Package, 
-  Phone 
+  Phone,
+  LogOut,
+  ShieldCheck,
+  KeyRound,
+  Eye,
+  EyeOff,
+  CheckCircle
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import type { ActiveBrand, ProductCategory } from '../../types';
@@ -25,10 +31,23 @@ export const AdminPanel: React.FC = () => {
     campaignConfig, 
     updateCampaignConfig,
     resetToDefaults,
-    setCurrentTab
+    setCurrentTab,
+    logoutAdmin,
+    changeAdminPassword,
+    resetAdminPassword,
+    defaultAdminPassword
   } = useStore();
 
-  const [activeAdminTab, setActiveAdminTab] = useState<'nuevo' | 'inventario' | 'campana'>('nuevo');
+  const [activeAdminTab, setActiveAdminTab] = useState<'nuevo' | 'inventario' | 'campana' | 'seguridad'>('nuevo');
+
+  // Security / Password form state
+  const [currentPassInput, setCurrentPassInput] = useState('');
+  const [newPassInput, setNewPassInput] = useState('');
+  const [confirmPassInput, setConfirmPassInput] = useState('');
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Quick product form state
   const [name, setName] = useState('');
@@ -119,6 +138,36 @@ export const AdminPanel: React.FC = () => {
     });
   };
 
+  const handlePasswordChangeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordFeedback(null);
+
+    if (!currentPassInput) {
+      setPasswordFeedback({ type: 'error', message: 'Por favor ingresa tu contraseña actual.' });
+      return;
+    }
+
+    if (newPassInput.length < 6) {
+      setPasswordFeedback({ type: 'error', message: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+      return;
+    }
+
+    if (newPassInput !== confirmPassInput) {
+      setPasswordFeedback({ type: 'error', message: 'Las contraseñas nuevas no coinciden entre sí.' });
+      return;
+    }
+
+    const result = changeAdminPassword(currentPassInput, newPassInput);
+    if (result.success) {
+      setCurrentPassInput('');
+      setNewPassInput('');
+      setConfirmPassInput('');
+      setPasswordFeedback({ type: 'success', message: '¡Contraseña actualizada con éxito! Se guardó en tu navegador.' });
+    } else {
+      setPasswordFeedback({ type: 'error', message: result.message });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -133,16 +182,27 @@ export const AdminPanel: React.FC = () => {
             Gestión de Inventario y Catálogos
           </h1>
           <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-            Sube nuevos productos en stock para entrega inmediata y actualiza los enlaces de las revistas de campaña.
+            Sube nuevos productos en stock para entrega inmediata, actualiza los enlaces de catálogos y configura tu clave.
           </p>
         </div>
 
-        <button
-          onClick={() => setCurrentTab('inmediata')}
-          className="px-4 py-2 rounded-xl bg-white text-neutral-900 font-bold text-xs hover:bg-neutral-100 transition-colors shadow-sm cursor-pointer"
-        >
-          Volver a la Tienda
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setCurrentTab('inmediata')}
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-colors cursor-pointer"
+          >
+            Volver a la Tienda
+          </button>
+          
+          <button
+            onClick={logoutAdmin}
+            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            title="Cerrar sesión de administradora"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
       </div>
 
       {/* Admin Tabs */}
@@ -181,6 +241,18 @@ export const AdminPanel: React.FC = () => {
         >
           <BookOpen className="w-4 h-4" />
           <span>Catálogos y Campaña</span>
+        </button>
+
+        <button
+          onClick={() => setActiveAdminTab('seguridad')}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
+            activeAdminTab === 'seguridad'
+              ? 'border-rose-600 text-rose-600 bg-rose-50/50 rounded-t-xl'
+              : 'border-transparent text-neutral-500 hover:text-neutral-900'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Seguridad y Contraseña</span>
         </button>
       </div>
 
@@ -669,6 +741,195 @@ export const AdminPanel: React.FC = () => {
             </div>
 
           </form>
+        </div>
+      )}
+
+      {/* TAB 4: SEGURIDAD Y CONFIGURACIÓN DE CONTRASEÑA */}
+      {activeAdminTab === 'seguridad' && (
+        <div className="space-y-6 max-w-2xl">
+          
+          {/* Main Change Password Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-xl font-bold font-serif text-neutral-900 flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-rose-600" />
+                <span>Cambiar Contraseña del Panel</span>
+              </h2>
+              <p className="text-xs text-neutral-500 mt-1">
+                Actualiza la contraseña necesaria para ingresar al panel de administración y editar el stock o catálogos.
+              </p>
+            </div>
+
+            {/* Feedback alert banner */}
+            {passwordFeedback && (
+              <div
+                className={`p-4 rounded-2xl flex items-start gap-3 text-xs font-medium animate-in fade-in duration-200 ${
+                  passwordFeedback.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                }`}
+              >
+                {passwordFeedback.type === 'success' ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <span className="text-sm shrink-0">⚠️</span>
+                )}
+                <span>{passwordFeedback.message}</span>
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordChangeSubmit} className="space-y-4">
+              
+              {/* Current Password */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1.5">
+                  Contraseña Actual *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPass ? 'text' : 'password'}
+                    required
+                    placeholder="Ingresa la contraseña actual..."
+                    value={currentPassInput}
+                    onChange={(e) => setCurrentPassInput(e.target.value)}
+                    className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 p-1"
+                    aria-label={showCurrentPass ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1.5">
+                  Nueva Contraseña *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    placeholder="Mínimo 6 caracteres..."
+                    value={newPassInput}
+                    onChange={(e) => setNewPassInput(e.target.value)}
+                    className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 p-1"
+                    aria-label={showNewPass ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <span className="text-[11px] text-neutral-400 mt-1 block">
+                  Recomendado: combina letras, números y símbolos para mayor seguridad.
+                </span>
+              </div>
+
+              {/* Confirm New Password */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1.5">
+                  Confirmar Nueva Contraseña *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    placeholder="Repite la nueva contraseña..."
+                    value={confirmPassInput}
+                    onChange={(e) => setConfirmPassInput(e.target.value)}
+                    className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 p-1"
+                    aria-label={showConfirmPass ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-sm shadow-md transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Guardar Nueva Contraseña</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+          {/* Default Password & Reset Info Box */}
+          <div className="bg-neutral-50 rounded-3xl p-6 border border-neutral-200/80 space-y-3">
+            <div className="flex items-center gap-2 text-neutral-900 font-bold text-sm">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Contraseña Predeterminada de Fábrica</span>
+            </div>
+            
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              La contraseña por defecto configurada para el sistema es: <code className="bg-white border border-neutral-200 px-2 py-0.5 rounded font-mono font-bold text-neutral-900">{defaultAdminPassword}</code>. 
+              Si olvidas tu clave personalizada, puedes restablecerla a la clave original haciendo clic abajo:
+            </p>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`¿Segura que deseas restablecer la contraseña a la clave de fábrica ("${defaultAdminPassword}")?`)) {
+                    resetAdminPassword();
+                    setCurrentPassInput('');
+                    setNewPassInput('');
+                    setConfirmPassInput('');
+                    setPasswordFeedback({
+                      type: 'success',
+                      message: `Contraseña restablecida exitosamente a la de fábrica: "${defaultAdminPassword}".`
+                    });
+                  }
+                }}
+                className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Restablecer contraseña a la de fábrica ({defaultAdminPassword})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Active Session Management */}
+          <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-xs font-bold text-neutral-800">Sesión Administrativa Activa</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-0.5">
+                Al salir o cerrar la ventana se mantendrá tu sesión protegida.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={logoutAdmin}
+              className="px-4 py-2 bg-neutral-100 hover:bg-red-50 text-neutral-700 hover:text-red-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-neutral-200 hover:border-red-200"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Cerrar Sesión Ahora</span>
+            </button>
+          </div>
+
         </div>
       )}
 

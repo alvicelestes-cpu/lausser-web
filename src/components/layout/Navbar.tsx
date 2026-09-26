@@ -23,11 +23,25 @@ export const Navbar: React.FC = () => {
     setCurrentTab, 
     setIsCartOpen, 
     setIsMagazineOrderOpen,
-    cartTotalCount 
+    cartTotalCount,
+    isAdminAuthenticated,
+    setIsAdminLoginOpen
   } = useStore();
 
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleAdminAccess = () => {
+    if (currentTab === 'admin') {
+      setCurrentTab('inmediata');
+    } else {
+      if (isAdminAuthenticated) {
+        setCurrentTab('admin');
+      } else {
+        setIsAdminLoginOpen(true);
+      }
+    }
+  };
 
   const brands: { id: Brand; label: string; activeColor: string }[] = [
     { id: 'all', label: 'Todas las marcas', activeColor: 'bg-neutral-900 text-white' },
@@ -113,13 +127,13 @@ export const Navbar: React.FC = () => {
 
             {/* Admin panel button */}
             <button
-              onClick={() => setCurrentTab(currentTab === 'admin' ? 'inmediata' : 'admin')}
-              className={`p-2 rounded-full border transition-all ${
+              onClick={handleAdminAccess}
+              className={`p-2 rounded-full border transition-all cursor-pointer ${
                 currentTab === 'admin'
                   ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
                   : 'text-neutral-500 hover:text-neutral-800 border-neutral-200 hover:bg-neutral-100'
               }`}
-              title="Panel de Administración"
+              title={isAdminAuthenticated ? "Panel de Administración" : "Acceso Administrativo (Requiere Clave)"}
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -278,16 +292,18 @@ export const Navbar: React.FC = () => {
           </button>
           <button
             onClick={() => {
-              setCurrentTab('admin');
               setIsMobileMenuOpen(false);
+              handleAdminAccess();
             }}
-            className="w-full flex items-center justify-between p-2.5 text-sm font-semibold rounded-lg text-neutral-600 hover:bg-neutral-100"
+            className="w-full flex items-center justify-between p-2.5 text-sm font-semibold rounded-lg text-neutral-600 hover:bg-neutral-100 cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               <span>Panel de Administración</span>
             </div>
-            <span className="text-xs text-neutral-400">Gestionar</span>
+            <span className="text-xs text-neutral-400">
+              {isAdminAuthenticated ? 'Gestionar' : 'Acceso seguro'}
+            </span>
           </button>
         </div>
       )}
