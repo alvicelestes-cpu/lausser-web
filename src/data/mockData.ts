@@ -11,7 +11,7 @@ export const initialProducts: Product[] = [
     price: 89000,
     discountPrice: 62000,
     stock: 5,
-    imageUrl: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=700&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=700&q=80',
     description: 'Aroma oriental dulce con notas de flor de naranjo y néctar de grosella roja. Máxima duración y fijación premium.',
     rating: 4.9,
     isFeatured: true,

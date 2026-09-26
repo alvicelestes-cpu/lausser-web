@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Plus, 
   Settings, 
@@ -15,11 +15,15 @@ import {
   KeyRound,
   Eye,
   EyeOff,
-  CheckCircle
+  CheckCircle,
+  Camera,
+  Upload,
+  X,
+  Loader2
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import type { ActiveBrand, ProductCategory } from '../../types';
-import { formatCurrency, getBrandTheme } from '../../utils/formatters';
+import { formatCurrency, getBrandTheme, parseCOP } from '../../utils/formatters';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -61,6 +65,105 @@ export const AdminPanel: React.FC = () => {
   const [volumeOrSize, setVolumeOrSize] = useState('');
   const [description, setDescription] = useState('');
 
+  // Image upload & camera state
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Compress image to WebP/JPEG using HTML Canvas (max 800px, quality 0.78)
+  const compressImageFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 800;
+          let { width, height } = img;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(img.src);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Intentar WebP para máxima compresión y bajo consumo de memoria
+          try {
+            const webp = canvas.toDataURL('image/webp', 0.78);
+            if (webp && webp.startsWith('data:image/webp')) {
+              resolve(webp);
+              return;
+            }
+          } catch {
+            // Continuar al fallback JPEG
+          }
+
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        };
+        img.onerror = () => reject(new Error('Error al cargar la imagen'));
+      };
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsCompressingImage(true);
+      const compressedDataUrl = await compressImageFile(file);
+      setImageUrl(compressedDataUrl);
+    } catch (err) {
+      console.error('Error al procesar la imagen:', err);
+      alert('Hubo un problema al procesar la imagen. Intenta con otra foto.');
+    } finally {
+      setIsCompressingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  // Fotos de muestra oficiales para marcas Belcorp (Ésika, Cyzone, L'Bel)
+  const imagePresets = [
+    { label: 'Perfumería Ésika Femenina', brand: 'ésika', url: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=700&q=80' },
+    { label: 'Perfumería Masculina Ésika', brand: 'ésika', url: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=700&q=80' },
+    { label: 'Labial Mate Colorfix', brand: 'ésika', url: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=700&q=80' },
+    { label: 'Máscara Pestañas Cyzone', brand: 'cyzone', url: 'https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?auto=format&fit=crop&w=700&q=80' },
+    { label: 'Sérum Facial L\'Bel', brand: 'lbel', url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=700&q=80' },
+    { label: 'Crema / Cuidado Corporal', brand: 'ésika', url: 'https://images.unsplash.com/photo-1608248597359-52e6945037d4?auto=format&fit=crop&w=700&q=80' },
+  ];
+
+  const getFallbackProductImage = (selectedBrand: ActiveBrand): string => {
+    switch (selectedBrand) {
+      case 'ésika':
+        return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=700&q=80';
+      case 'cyzone':
+        return 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=700&q=80';
+      case 'lbel':
+        return 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=700&q=80';
+      default:
+        return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=700&q=80';
+    }
+  };
+
   // Campaign config form state
   const [campaignNumber, setCampaignNumber] = useState(campaignConfig.campaignNumber);
   const [closingDate, setClosingDate] = useState(() => {
@@ -77,26 +180,18 @@ export const AdminPanel: React.FC = () => {
   const [cyzoneUrl, setCyzoneUrl] = useState(campaignConfig.catalogUrls.cyzone);
   const [lbelUrl, setLbelUrl] = useState(campaignConfig.catalogUrls.lbel);
 
-  // Quick preset images for beauty products
-  const imagePresets = [
-    { label: 'Perfume Elegante', url: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=700&q=80' },
-    { label: 'Labial Mate', url: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=700&q=80' },
-    { label: 'Sérum Facial', url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=700&q=80' },
-    { label: 'Máscara Pestañas', url: 'https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?auto=format&fit=crop&w=700&q=80' },
-    { label: 'Crema Corporal', url: 'https://images.unsplash.com/photo-1608248597359-52e6945037d4?auto=format&fit=crop&w=700&q=80' },
-    { label: 'Perfume Masculino', url: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=700&q=80' },
-  ];
-
   const handleProductSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !price) {
-      alert('Ingresa al menos el nombre y precio del producto');
+    const regularPrice = parseCOP(price);
+    const specialPrice = discountPrice ? parseCOP(discountPrice) : undefined;
+
+    if (!name.trim() || regularPrice <= 0) {
+      alert('Ingresa el nombre del producto y un precio válido en pesos.');
       return;
     }
 
-    const regularPrice = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
-    const specialPrice = discountPrice ? parseFloat(discountPrice.replace(/[^0-9.]/g, '')) : undefined;
-    const stockQty = parseInt(stock) || 1;
+    const stockQty = parseInt(stock, 10) || 1;
+    const finalImageUrl = imageUrl.trim() || getFallbackProductImage(brand);
 
     addProduct({
       name: name.trim(),
@@ -106,7 +201,7 @@ export const AdminPanel: React.FC = () => {
       price: regularPrice,
       discountPrice: specialPrice && specialPrice > 0 ? specialPrice : undefined,
       stock: stockQty,
-      imageUrl: imageUrl.trim() || imagePresets[0].url,
+      imageUrl: finalImageUrl,
       volumeOrSize: volumeOrSize.trim() || undefined,
       description: description.trim() || 'Producto original disponible en stock para entrega inmediata.',
       rating: 4.9,
@@ -336,6 +431,23 @@ export const AdminPanel: React.FC = () => {
               </div>
             </div>
 
+            {/* Hidden file inputs for direct camera and gallery upload */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+
             {/* Prices & Stock */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -343,13 +455,23 @@ export const AdminPanel: React.FC = () => {
                   Precio Regular ($ COP) *
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   required
-                  placeholder="Ej. 75000"
+                  placeholder="Ej. 20000 o 20"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
                 />
+                {price ? (
+                  <span className="text-[11px] font-bold text-rose-600 block mt-1">
+                    Valor: {formatCurrency(parseCOP(price))}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-neutral-400 block mt-1">
+                    Ej: 20000 o 20 (será $ 20.000 COP)
+                  </span>
+                )}
               </div>
 
               <div>
@@ -357,12 +479,22 @@ export const AdminPanel: React.FC = () => {
                   Precio Oferta Lausser ($ COP)
                 </label>
                 <input
-                  type="number"
-                  placeholder="Ej. 52000 (Opcional)"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ej. 15000 o 15 (Opcional)"
                   value={discountPrice}
                   onChange={(e) => setDiscountPrice(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
                 />
+                {discountPrice ? (
+                  <span className="text-[11px] font-bold text-rose-600 block mt-1">
+                    Oferta: {formatCurrency(parseCOP(discountPrice))}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-neutral-400 block mt-1">
+                    Opcional (se mostrará con descuento)
+                  </span>
+                )}
               </div>
 
               <div>
@@ -380,53 +512,147 @@ export const AdminPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Presentation/Size & Photo URL */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1.5">
-                  Tono o Tamaño
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. 50 ml o Tono Nude"
-                  value={volumeOrSize}
-                  onChange={(e) => setVolumeOrSize(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1.5">
-                  URL de Foto del Producto
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
-                />
-              </div>
+            {/* Presentation/Size */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase mb-1.5">
+                Presentación, Tono o Tamaño
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. 50 ml, Tono Rosa Soñadora, Frasco con atomizador..."
+                value={volumeOrSize}
+                onChange={(e) => setVolumeOrSize(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-500 focus:outline-none"
+              />
             </div>
 
-            {/* Quick photo presets */}
-            <div>
-              <span className="text-[11px] font-semibold text-neutral-500 block mb-1.5">
-                Fotos de muestra rápidas (haz clic para usar):
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {imagePresets.map((preset, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setImageUrl(preset.url)}
-                    className="text-xs px-2.5 py-1 bg-neutral-100 hover:bg-rose-50 hover:text-rose-600 rounded-lg border border-neutral-200 transition-colors cursor-pointer flex items-center gap-1"
-                  >
-                    <ImageIcon className="w-3 h-3 text-neutral-400" />
-                    <span>{preset.label}</span>
-                  </button>
-                ))}
+            {/* DIRECT PHOTO UPLOAD (CAMERA & GALLERY) */}
+            <div className="p-4 sm:p-5 bg-neutral-50 rounded-2xl border border-neutral-200/80 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-800 uppercase mb-0.5 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-rose-600" />
+                  <span>Foto del Producto (Cámara o Galería)</span>
+                </label>
+                <p className="text-[11px] text-neutral-500">
+                  Sube una foto desde tu celular o computadora. Se comprimirá automáticamente para cargar rápido sin ocupar espacio.
+                </p>
               </div>
+
+              {isCompressingImage && (
+                <div className="py-4 text-center flex items-center justify-center gap-2 text-xs font-bold text-rose-600 bg-rose-50/50 rounded-xl">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Procesando y optimizando imagen...</span>
+                </div>
+              )}
+
+              {/* If image is already selected / captured */}
+              {imageUrl ? (
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3.5 rounded-2xl border border-neutral-200">
+                  <img
+                    src={imageUrl}
+                    alt="Vista previa del producto"
+                    className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl border border-neutral-200 shrink-0 shadow-2xs"
+                  />
+                  <div className="flex-1 space-y-2 text-center sm:text-left">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Foto lista para guardar</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      Esta imagen se guardará directamente con el producto sin necesidad de enlaces externos.
+                    </p>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Tomar otra</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Galería</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Quitar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Buttons to capture or upload */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="p-4 rounded-xl border-2 border-dashed border-rose-300 hover:border-rose-500 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold text-xs flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Camera className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <span>Tomar Foto con Cámara</span>
+                    <span className="text-[10px] font-normal text-rose-500">Usa la cámara del celular</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-4 rounded-xl border-2 border-dashed border-neutral-300 hover:border-neutral-500 bg-white hover:bg-neutral-50 text-neutral-700 font-bold text-xs flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Upload className="w-5 h-5 text-neutral-600" />
+                    </div>
+                    <span>Subir desde Galería o PC</span>
+                    <span className="text-[10px] font-normal text-neutral-400">Selecciona un archivo guardado</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Preset photos for Ésika / Cyzone / L'Bel */}
+              <div className="pt-2 border-t border-neutral-200/60">
+                <span className="text-[11px] font-semibold text-neutral-600 block mb-2">
+                  O usa una foto de muestra oficial (Ésika, Cyzone, L'Bel):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {imagePresets.map((preset, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setImageUrl(preset.url)}
+                      className="text-xs px-2.5 py-1.5 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 rounded-xl border border-neutral-200 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Optional manual URL input */}
+              <details className="text-xs text-neutral-500 pt-1">
+                <summary className="cursor-pointer hover:text-neutral-800 font-medium">
+                  ¿Prefieres ingresar una URL externa de imagen? (Opcional)
+                </summary>
+                <div className="pt-2">
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 text-xs focus:border-rose-500 focus:outline-none bg-white"
+                  />
+                </div>
+              </details>
             </div>
 
             {/* Description */}

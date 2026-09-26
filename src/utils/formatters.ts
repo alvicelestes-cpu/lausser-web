@@ -1,11 +1,33 @@
-// Formateador de moneda en pesos (COP / Formato latino)
+// Normaliza valores en pesos colombianos (si se ingresa 20 se asume 20.000)
+export const normalizeCOP = (amount: number): number => {
+  if (isNaN(amount) || amount === null || amount === undefined) return 0;
+  // Si el valor ingresado es menor a 1000 (ej. 20, 25, 75), se normaliza como miles (20.000)
+  if (amount > 0 && amount < 1000) {
+    return Math.round(amount * 1000);
+  }
+  return Math.round(amount);
+};
+
+// Convierte cualquier string o número ingresado (ej: "20", "20000", "20.000") a número entero COP
+export const parseCOP = (value: string | number): number => {
+  if (typeof value === 'number') {
+    return normalizeCOP(value);
+  }
+  if (!value) return 0;
+  const str = String(value).trim();
+  // Limpiar caracteres que no sean dígitos
+  const cleaned = str.replace(/[^0-9]/g, '');
+  const parsed = parseInt(cleaned, 10) || 0;
+  return normalizeCOP(parsed);
+};
+
+// Formateador de moneda en pesos colombianos ($ XX.XXX COP)
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
+  const normalized = normalizeCOP(amount);
+  const formatted = new Intl.NumberFormat('es-CO', {
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(normalized);
+  return `$ ${formatted} COP`;
 };
 
 // Formateador de fecha amigable en español

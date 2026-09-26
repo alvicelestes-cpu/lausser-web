@@ -33,7 +33,7 @@ export const CatalogModule: React.FC = () => {
       name: 'Ésika',
       tagline: 'Perfumería Fina & Color de Larga Duración',
       description: 'Descubre las fragancias #1 de Latinoamérica como Red Power y Pulso, labiales Colorfix Duo Tattoo 24H y cosméticos de alta fijación.',
-      coverImage: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80',
+      coverImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80',
       accentColor: 'from-rose-600 to-red-600',
       gradient: 'hover:border-rose-400 focus:ring-rose-200',
       highlights: ['Perfumería de Alta Duración', 'Colorfix 24 Horas', 'Cuidado Familiar'],
