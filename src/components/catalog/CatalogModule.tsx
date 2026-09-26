@@ -1,349 +1,252 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  ExternalLink, 
   BookOpen, 
-  Maximize2, 
   Sparkles, 
   FileText, 
-  ChevronRight, 
-  ChevronLeft,
-  ShoppingBag,
-  Info
+  ExternalLink, 
+  Calendar,
+  CheckCircle2,
+  ArrowRight
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import type { ActiveBrand } from '../../types';
 import { CountdownBanner } from './CountdownBanner';
-import { getBrandTheme } from '../../utils/formatters';
+import { formatDateFriendly, getBrandTheme } from '../../utils/formatters';
 
-interface CatalogPageMock {
-  pageNumber: number;
-  title: string;
-  featuredCode: string;
-  productName: string;
-  price: number;
-  imageUrl: string;
+interface CatalogBrandCard {
+  brand: ActiveBrand;
+  name: string;
+  tagline: string;
+  description: string;
+  coverImage: string;
+  accentColor: string;
+  gradient: string;
+  highlights: string[];
 }
 
 export const CatalogModule: React.FC = () => {
-  const { campaignConfig, setIsMagazineOrderOpen, addMagazineItemToCart } = useStore();
-  const [selectedBrand, setSelectedBrand] = useState<ActiveBrand>('ésika');
-  const [currentPreviewPage, setCurrentPreviewPage] = useState(0);
+  const { campaignConfig, setIsMagazineOrderOpen } = useStore();
 
-  const brandTabs: { id: ActiveBrand; name: string; subtitle: string }[] = [
-    { id: 'ésika', name: 'Ésika', subtitle: 'Perfumería Fina & Color 24H' },
-    { id: 'cyzone', name: 'Cyzone', subtitle: 'Tendencias Juveniles & Maquillaje' },
-    { id: 'lbel', name: "L'Bel", subtitle: 'Tratamiento Facial Francés & Alta Gama' },
+  const catalogBrands: CatalogBrandCard[] = [
+    {
+      brand: 'ésika',
+      name: 'Ésika',
+      tagline: 'Perfumería Fina & Color de Larga Duración',
+      description: 'Descubre las fragancias #1 de Latinoamérica como Red Power y Pulso, labiales Colorfix Duo Tattoo 24H y cosméticos de alta fijación.',
+      coverImage: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80',
+      accentColor: 'from-rose-600 to-red-600',
+      gradient: 'hover:border-rose-400 focus:ring-rose-200',
+      highlights: ['Perfumería de Alta Duración', 'Colorfix 24 Horas', 'Cuidado Familiar'],
+    },
+    {
+      brand: 'cyzone',
+      name: 'Cyzone',
+      tagline: 'Tendencias Virales, Color & Juventud',
+      description: 'Encuentra las mejores tendencias en labiales mate Studio Look indelebles, fragancias Sweet Black y la línea purificante facial Skin First.',
+      coverImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80',
+      accentColor: 'from-fuchsia-600 to-purple-600',
+      gradient: 'hover:border-fuchsia-400 focus:ring-fuchsia-200',
+      highlights: ['Studio Look No-Transfer', 'Perfumes Dulces & Urbanos', 'Rutinas Skin First'],
+    },
+    {
+      brand: 'lbel',
+      name: "L'Bel",
+      tagline: 'Alta Cosmética Francesa & Tratamiento Antiedad',
+      description: 'Lujo y ciencia dermocosmética: Tratamiento Concentré Total con células madre, sueros de ácido hialurónico 3D y perfumes Liasson.',
+      coverImage: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
+      accentColor: 'from-neutral-900 via-neutral-800 to-amber-900',
+      gradient: 'hover:border-amber-400 focus:ring-amber-200',
+      highlights: ['Concentré Total Antiedad', 'Ácido Hialurónico Puro', 'Haute Parfumerie'],
+    },
   ];
 
-  // Visual sample catalog spreads for interactive preview experience
-  const catalogPagesByBrand: Record<ActiveBrand, CatalogPageMock[]> = {
-    ésika: [
-      {
-        pageNumber: 12,
-        title: 'Lanzamiento Especial: Red Power',
-        featuredCode: '18492',
-        productName: 'Perfume Red Power 50ml',
-        price: 62000,
-        imageUrl: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        pageNumber: 26,
-        title: 'Colorfix 24H: Cero Retoques',
-        featuredCode: '05432',
-        productName: 'Labial Duo Tattoo 24H',
-        price: 24900,
-        imageUrl: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        pageNumber: 44,
-        title: 'Mirada Impactante Mega Full Size',
-        featuredCode: '09811',
-        productName: 'Máscara Efecto Pestañas Postizas',
-        price: 28000,
-        imageUrl: 'https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?auto=format&fit=crop&w=800&q=80',
-      },
-    ],
-    cyzone: [
-      {
-        pageNumber: 8,
-        title: 'Sweet Black: El aroma que cautiva',
-        featuredCode: '14210',
-        productName: 'Perfume Sweet Black 50ml',
-        price: 39900,
-        imageUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        pageNumber: 18,
-        title: 'Studio Look: Acabado Mate 16H',
-        featuredCode: '07541',
-        productName: 'Labial Studio Look No Transfer',
-        price: 19900,
-        imageUrl: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        pageNumber: 30,
-        title: 'Skin First: Tu piel radiante',
-        featuredCode: '06810',
-        productName: 'Gel Limpiador Botánico Skin First',
-        price: 22000,
-        imageUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80',
-      },
-    ],
-    lbel: [
-      {
-        pageNumber: 4,
-        title: "Liasson: Máxima Sofisticación Francesa",
-        featuredCode: '19041',
-        productName: "Perfume Liasson L'Bel 50ml",
-        price: 99000,
-        imageUrl: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        pageNumber: 16,
-        title: "Concentré Total: 10 Beneficios Rejuvenecedores",
-        featuredCode: '02188',
-        productName: "Tratamiento Global Concentré Total",
-        price: 118000,
-        imageUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        pageNumber: 22,
-        title: "Hyaluronic Complex 3D de L'Bel",
-        featuredCode: '03411',
-        productName: "Sérum Hidratación Profunda 3D",
-        price: 85000,
-        imageUrl: 'https://images.unsplash.com/photo-1608248597350-9366d0c75cbe?auto=format&fit=crop&w=800&q=80',
-      },
-    ],
-  };
-
-  const currentCatalogUrl = campaignConfig.catalogUrls[selectedBrand];
-  const currentPages = catalogPagesByBrand[selectedBrand];
-  const currentPageData = currentPages[currentPreviewPage % currentPages.length];
-
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-8 animate-in fade-in duration-300">
       
-      {/* 1. Countdown Banner */}
+      {/* 1. Countdown Banner for Campaign Close */}
       <CountdownBanner />
 
-      {/* 2. Brand Tabs Header */}
-      <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-neutral-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <span className="text-xs font-bold text-rose-600 uppercase tracking-widest flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4" />
-              Catálogos Oficiales de Campaña {campaignConfig.campaignNumber}
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-neutral-900 mt-1">
-              Explora las Revistas Digitales
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-500">
-              Hojea las páginas oficiales y anota los códigos de tus productos favoritos para pedirlos con tu pedido de campaña.
+      {/* 2. Section Title and Fast Action Bar */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 mb-2">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Catálogos Digitales Oficiales Belcorp</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-neutral-900">
+            Revistas Interactivas de Campaña {campaignConfig.campaignNumber}
+          </h2>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1 max-w-2xl">
+            Abre la revista digital de tu marca preferida, pasa las páginas online y anota los códigos de tus productos deseados para pedirlos directamente por WhatsApp con tu asesora.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsMagazineOrderOpen(true)}
+          className="self-start md:self-auto flex items-center gap-2 px-5 py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 shrink-0 cursor-pointer"
+        >
+          <FileText className="w-4 h-4 text-rose-400" />
+          <span>Pedir por Código de Revista</span>
+        </button>
+      </div>
+
+      {/* 3. Eye-Catching Magazine Brand Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        {catalogBrands.map((card) => {
+          const brandTheme = getBrandTheme(card.brand);
+          const catalogUrl = campaignConfig.catalogUrls[card.brand];
+
+          return (
+            <div
+              key={card.brand}
+              className={`bg-white rounded-3xl overflow-hidden border border-neutral-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group ${card.gradient}`}
+            >
+              {/* Top Cover Image with Visual Badges */}
+              <div className="relative aspect-4/3 sm:aspect-16/10 overflow-hidden bg-neutral-900">
+                <img
+                  src={card.coverImage}
+                  alt={`Revista Digital ${card.name}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                />
+
+                {/* Dark gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                {/* Brand Tag Top Left */}
+                <div className="absolute top-3.5 left-3.5">
+                  <span className={`${brandTheme.badge} text-xs font-extrabold uppercase px-3 py-1 rounded-full shadow-md tracking-wider`}>
+                    {card.name}
+                  </span>
+                </div>
+
+                {/* Campaign Pill Top Right */}
+                <div className="absolute top-3.5 right-3.5 bg-white/95 backdrop-blur-md text-neutral-900 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-rose-600" />
+                  <span>{campaignConfig.campaignNumber}</span>
+                </div>
+
+                {/* Title inside cover */}
+                <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white">
+                  <span className="text-[10px] uppercase font-bold text-rose-300 tracking-widest block mb-0.5">
+                    Revista Oficial
+                  </span>
+                  <h3 className="text-xl font-bold font-serif leading-tight">
+                    Catálogo {card.name}
+                  </h3>
+                  <p className="text-xs text-white/80 line-clamp-1">{card.tagline}</p>
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
+                
+                <div className="space-y-3">
+                  {/* Closing Date info */}
+                  <div className="bg-neutral-50 rounded-2xl p-3 border border-neutral-200/80 flex items-center gap-2.5 text-xs text-neutral-600">
+                    <Calendar className="w-4 h-4 text-rose-600 shrink-0" />
+                    <div>
+                      <span className="font-semibold text-neutral-800 block">Cierre de pedidos:</span>
+                      <span className="text-neutral-500 capitalize">{formatDateFriendly(campaignConfig.closingDate)}</span>
+                    </div>
+                  </div>
+
+                  {/* Highlights list */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold uppercase text-neutral-400 tracking-wider block">
+                      Lo más destacado:
+                    </span>
+                    {card.highlights.map((highlight, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-xs text-neutral-700">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{highlight}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-xs text-neutral-500 leading-relaxed pt-1">
+                    {card.description}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-2 space-y-2 border-t border-neutral-100">
+                  {/* Primary CTA: Open Catalog in new tab */}
+                  <a
+                    href={catalogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r ${card.accentColor} hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group-hover:scale-[1.01]`}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>📖 Ver y pasar Revista Digital</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                  </a>
+
+                  {/* Secondary CTA: Quick code order for this brand */}
+                  <button
+                    onClick={() => setIsMagazineOrderOpen(true)}
+                    className="w-full py-2.5 px-4 rounded-xl border border-neutral-200 hover:border-neutral-300 bg-neutral-50 hover:bg-neutral-100 text-neutral-800 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Pedir por Código de Revista</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. Interactive Step-by-Step Guide on How It Works */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm">
+        <h3 className="text-lg sm:text-xl font-bold font-serif text-neutral-900 text-center mb-6">
+          ¿Cómo pedir desde los catálogos digitales?
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/80 flex flex-col items-center text-center space-y-2">
+            <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-700 font-bold text-base flex items-center justify-center">
+              1
+            </div>
+            <h4 className="font-bold text-sm text-neutral-900">Hojea la Revista Digital</h4>
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Haz clic en <strong>"Ver y pasar Revista Digital"</strong> de Ésika, Cyzone o L'Bel para abrir el catálogo interactivo oficial.
             </p>
           </div>
 
+          <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/80 flex flex-col items-center text-center space-y-2">
+            <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-700 font-bold text-base flex items-center justify-center">
+              2
+            </div>
+            <h4 className="font-bold text-sm text-neutral-900">Anota el Código de Producto</h4>
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Cada producto tiene un código numérico (ej. <em>18492</em>) y página. Anota los que más te gusten junto con el tono o aroma.
+            </p>
+          </div>
+
+          <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/80 flex flex-col items-center text-center space-y-2">
+            <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-700 font-bold text-base flex items-center justify-center">
+              3
+            </div>
+            <h4 className="font-bold text-sm text-neutral-900">Ingresa el Código y Pídelo</h4>
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Usa el botón <strong>"Pedir por Código"</strong> para sumarlo a tu pedido y confirma tu orden vía WhatsApp con tu asesora.
+            </p>
+          </div>
+        </div>
+
+        {/* Big Bottom Action Button */}
+        <div className="mt-8 text-center">
           <button
             onClick={() => setIsMagazineOrderOpen(true)}
-            className="self-start md:self-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-sm shadow-lg hover:shadow-rose-500/25 transition-all active:scale-95 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
-            <span>Ingresar Código de Revista</span>
+            <span>Ingresar un Código de Revista Ahora</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Brand Selector Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {brandTabs.map((tab) => {
-            const isSelected = selectedBrand === tab.id;
-            const theme = getBrandTheme(tab.id);
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setSelectedBrand(tab.id);
-                  setCurrentPreviewPage(0);
-                }}
-                className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? `border-transparent ring-2 ring-neutral-900 ${theme.bg} shadow-md`
-                    : 'border-neutral-200 bg-white hover:bg-neutral-50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-base font-bold font-serif ${isSelected ? theme.text : 'text-neutral-800'}`}>
-                    Revista {tab.name}
-                  </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${theme.badge}`}>
-                    {tab.id.toUpperCase()}
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-500 line-clamp-1">{tab.subtitle}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 3. Interactive Catalog Spread Preview & Direct Magazine Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        
-        {/* Left: Interactive Page Preview with Direct Add Code */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-neutral-200 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                Página destacada de la revista
-              </span>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700">
-                Página {currentPageData.pageNumber}
-              </span>
-            </div>
-
-            {/* Catalog Page Visual Card */}
-            <div className="relative rounded-2xl overflow-hidden aspect-4/3 bg-neutral-100 mb-4 group shadow-inner">
-              <img
-                src={currentPageData.imageUrl}
-                alt={currentPageData.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300">
-                  {selectedBrand.toUpperCase()} • OFERTA DE CAMPAÑA
-                </span>
-                <h4 className="text-base sm:text-lg font-bold font-serif">{currentPageData.title}</h4>
-                <p className="text-xs text-neutral-200 mt-0.5">{currentPageData.productName}</p>
-              </div>
-
-              {/* Tag with product code */}
-              <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-md text-neutral-900 text-xs font-bold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Cód: {currentPageData.featuredCode}</span>
-              </div>
-            </div>
-
-            {/* Quick action for highlighted page */}
-            <div className="bg-neutral-50 rounded-2xl p-3.5 border border-neutral-200 flex items-center justify-between gap-3">
-              <div>
-                <span className="text-xs text-neutral-500 block">Precio Revista:</span>
-                <span className="text-base font-bold text-neutral-900">
-                  ${currentPageData.price.toLocaleString('es-CO')} COP
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  addMagazineItemToCart(
-                    selectedBrand,
-                    currentPageData.featuredCode,
-                    currentPageData.productName,
-                    currentPageData.price,
-                    String(currentPageData.pageNumber),
-                    `Destacado de revista ${selectedBrand}`
-                  );
-                }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold shadow-sm transition-all"
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Pedir este código</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Pagination controls */}
-          <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-100">
-            <button
-              onClick={() =>
-                setCurrentPreviewPage((p) => (p === 0 ? currentPages.length - 1 : p - 1))
-              }
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100 text-xs font-medium text-neutral-700 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Anterior</span>
-            </button>
-
-            <span className="text-xs font-medium text-neutral-500">
-              {currentPreviewPage + 1} de {currentPages.length} destacadas
-            </span>
-
-            <button
-              onClick={() =>
-                setCurrentPreviewPage((p) => (p + 1) % currentPages.length)
-              }
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100 text-xs font-medium text-neutral-700 transition-colors"
-            >
-              <span>Siguiente</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Right: Embed / Full Catalog Frame Viewer */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-neutral-200 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" />
-                <h3 className="font-bold text-sm sm:text-base text-neutral-900 font-serif">
-                  Visor Oficial de Revista Digital {selectedBrand.toUpperCase()}
-                </h3>
-              </div>
-
-              <a
-                href={currentCatalogUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Pantalla Completa</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-
-            {/* Interactive Embed Frame / Live Viewer */}
-            <div className="relative w-full h-[380px] sm:h-[440px] rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-900 shadow-inner group">
-              <iframe
-                title={`Catálogo Digital ${selectedBrand}`}
-                src={currentCatalogUrl}
-                className="w-full h-full border-0"
-                allow="fullscreen"
-                loading="lazy"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              />
-
-              {/* Floating Fallback / Direct Launch Overlay at the bottom */}
-              <div className="absolute bottom-3 left-3 right-3 bg-neutral-900/90 backdrop-blur-md text-white p-3 rounded-xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-lg">
-                <div className="flex items-center gap-2 text-xs">
-                  <Info className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-neutral-300">
-                    ¿La revista no carga en tu navegador por bloqueos de seguridad?
-                  </span>
-                </div>
-                <a
-                  href={currentCatalogUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-white text-neutral-900 hover:bg-neutral-100 text-xs font-bold transition-all text-center shrink-0 flex items-center justify-center gap-1.5"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Abrir Catálogo Oficial</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom helper tip */}
-          <div className="pt-4 mt-4 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
-            <span>💡 Pasa las hojas digitales, copia el código de 5 o 6 dígitos y usa nuestro botón rápido.</span>
-            <button
-              onClick={() => setIsMagazineOrderOpen(true)}
-              className="text-rose-600 font-bold hover:underline shrink-0"
-            >
-              + Añadir código de esta revista
-            </button>
-          </div>
-        </div>
-
       </div>
 
     </div>

@@ -50,6 +50,7 @@ interface StoreContextType {
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
+  clearAllProducts: () => void;
   updateCampaignConfig: (config: Partial<CampaignConfig>) => void;
   resetToDefaults: () => void;
   
@@ -71,7 +72,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      if (saved) return JSON.parse(saved);
+      if (saved !== null) return JSON.parse(saved);
     } catch (e) {
       console.error('Failed to load products from storage', e);
     }
@@ -248,6 +249,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Producto retirado del catálogo', 'info');
   };
 
+  const clearAllProducts = () => {
+    setProducts([]);
+    try {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+    } catch (e) {
+      console.error(e);
+    }
+    showToast('Catálogo vaciado completamente', 'info');
+  };
+
   const updateCampaignConfig = (updated: Partial<CampaignConfig>) => {
     setCampaignConfig((prev) => ({ ...prev, ...updated }));
     showToast('Configuración de campaña actualizada', 'success');
@@ -293,6 +304,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addProduct,
         updateProduct,
         deleteProduct,
+        clearAllProducts,
         updateCampaignConfig,
         resetToDefaults,
         showToast,

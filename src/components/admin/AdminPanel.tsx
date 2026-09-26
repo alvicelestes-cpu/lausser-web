@@ -20,6 +20,7 @@ export const AdminPanel: React.FC = () => {
     products, 
     addProduct, 
     deleteProduct, 
+    clearAllProducts,
     updateProduct,
     campaignConfig, 
     updateCampaignConfig,
@@ -398,93 +399,137 @@ export const AdminPanel: React.FC = () => {
               </p>
             </div>
 
-            <button
-              onClick={resetToDefaults}
-              className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-rose-600 border border-neutral-200 px-3 py-1.5 rounded-xl hover:bg-neutral-50 transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Restablecer productos iniciales</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {products.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('¿Deseas eliminar TODOS los productos para dejar el catálogo limpio y listo para tus productos reales?')) {
+                      clearAllProducts();
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors font-semibold cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Borrar todos los productos demo</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={resetToDefaults}
+                className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-900 border border-neutral-200 px-3 py-1.5 rounded-xl hover:bg-neutral-50 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Restablecer demo</span>
+              </button>
+            </div>
           </div>
 
-          <div className="divide-y divide-neutral-100">
-            {products.map((product) => {
-              const theme = getBrandTheme(product.brand);
-              return (
-                <div key={product.id} className="py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded-xl border border-neutral-200 shrink-0"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.2 rounded-full ${theme.badge}`}>
-                          {product.brand}
-                        </span>
-                        <span className="text-xs text-neutral-400 capitalize">
-                          {product.category.replace('_', ' ')}
-                        </span>
-                      </div>
-                      <h4 className="text-sm font-bold text-neutral-900">{product.name}</h4>
-                      <div className="text-xs text-neutral-500 flex items-center gap-2">
-                        <span className="font-bold text-neutral-800">
-                          {formatCurrency(product.discountPrice || product.price)}
-                        </span>
-                        {product.discountPrice && (
-                          <span className="line-through text-neutral-400">
-                            {formatCurrency(product.price)}
+          {products.length === 0 ? (
+            <div className="py-12 text-center space-y-3">
+              <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+                <Package className="w-7 h-7" />
+              </div>
+              <h3 className="font-bold text-base text-neutral-900">El catálogo está limpio y sin productos</h3>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                Has borrado los productos demo con éxito. El inventario está listo para registrar tus productos reales con entrega inmediata.
+              </p>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setActiveAdminTab('nuevo')}
+                  className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold rounded-xl hover:bg-neutral-800 transition-colors shadow-sm cursor-pointer"
+                >
+                  + Subir mi primer producto real
+                </button>
+                <button
+                  onClick={resetToDefaults}
+                  className="px-4 py-2 border border-neutral-300 text-neutral-700 text-xs font-semibold rounded-xl hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  Recargar datos demo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-neutral-100">
+              {products.map((product) => {
+                const theme = getBrandTheme(product.brand);
+                return (
+                  <div key={product.id} className="py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded-xl border border-neutral-200 shrink-0"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className={`text-[10px] uppercase font-bold px-2 py-0.2 rounded-full ${theme.badge}`}>
+                            {product.brand}
                           </span>
-                        )}
-                        {product.volumeOrSize && <span>• {product.volumeOrSize}</span>}
+                          <span className="text-xs text-neutral-400 capitalize">
+                            {product.category.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-neutral-900">{product.name}</h4>
+                        <div className="text-xs text-neutral-500 flex items-center gap-2">
+                          <span className="font-bold text-neutral-800">
+                            {formatCurrency(product.discountPrice || product.price)}
+                          </span>
+                          {product.discountPrice && (
+                            <span className="line-through text-neutral-400">
+                              {formatCurrency(product.price)}
+                            </span>
+                          )}
+                          {product.volumeOrSize && <span>• {product.volumeOrSize}</span>}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Stock adjuster & delete */}
-                  <div className="flex items-center gap-3 self-end sm:self-auto">
-                    <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
-                      <span className="text-xs font-semibold text-neutral-500 px-2">Stock:</span>
+                    {/* Stock adjuster & delete */}
+                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                      <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
+                        <span className="text-xs font-semibold text-neutral-500 px-2">Stock:</span>
+                        <button
+                          onClick={() =>
+                            updateProduct({
+                              ...product,
+                              stock: Math.max(0, product.stock - 1),
+                            })
+                          }
+                          className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-neutral-700 hover:bg-neutral-200 text-xs font-bold"
+                        >
+                          -
+                        </button>
+                        <span className="w-8 text-center text-xs font-bold text-neutral-900">
+                          {product.stock}
+                        </span>
+                        <button
+                          onClick={() =>
+                            updateProduct({
+                              ...product,
+                              stock: product.stock + 1,
+                            })
+                          }
+                          className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-neutral-700 hover:bg-neutral-200 text-xs font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+
                       <button
-                        onClick={() =>
-                          updateProduct({
-                            ...product,
-                            stock: Math.max(0, product.stock - 1),
-                          })
-                        }
-                        className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-neutral-700 hover:bg-neutral-200 text-xs font-bold"
+                        onClick={() => deleteProduct(product.id)}
+                        className="p-2 text-neutral-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                        title="Eliminar producto"
                       >
-                        -
-                      </button>
-                      <span className="w-8 text-center text-xs font-bold text-neutral-900">
-                        {product.stock}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateProduct({
-                            ...product,
-                            stock: product.stock + 1,
-                          })
-                        }
-                        className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-neutral-700 hover:bg-neutral-200 text-xs font-bold"
-                      >
-                        +
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-
-                    <button
-                      onClick={() => deleteProduct(product.id)}
-                      className="p-2 text-neutral-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
-                      title="Eliminar producto"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
