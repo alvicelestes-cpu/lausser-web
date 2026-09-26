@@ -107,7 +107,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [campaignConfig, setCampaignConfig] = useState<CampaignConfig>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.CAMPAIGN);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure default Colombia official URLs are applied if using obsolete domains or empty
+        const defaultUrls = initialCampaignConfig.catalogUrls;
+        const isObsolete = (url?: string) => !url || url.includes('catalogos.somosbelcorp.com');
+        const updatedCatalogUrls = {
+          ésika: isObsolete(parsed.catalogUrls?.ésika) ? defaultUrls.ésika : parsed.catalogUrls.ésika,
+          cyzone: isObsolete(parsed.catalogUrls?.cyzone) ? defaultUrls.cyzone : parsed.catalogUrls.cyzone,
+          lbel: isObsolete(parsed.catalogUrls?.lbel) ? defaultUrls.lbel : parsed.catalogUrls.lbel,
+        };
+        const updatedPdfUrls = {
+          ésika: isObsolete(parsed.catalogPdfUrls?.ésika) ? defaultUrls.ésika : parsed.catalogPdfUrls.ésika,
+          cyzone: isObsolete(parsed.catalogPdfUrls?.cyzone) ? defaultUrls.cyzone : parsed.catalogPdfUrls.cyzone,
+          lbel: isObsolete(parsed.catalogPdfUrls?.lbel) ? defaultUrls.lbel : parsed.catalogPdfUrls.lbel,
+        };
+        return {
+          ...initialCampaignConfig,
+          ...parsed,
+          catalogUrls: updatedCatalogUrls,
+          catalogPdfUrls: updatedPdfUrls,
+        };
+      }
     } catch (e) {
       console.error('Failed to load campaign config', e);
     }

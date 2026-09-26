@@ -238,13 +238,13 @@ export const initialCampaignConfig: CampaignConfig = {
   whatsappNumber: '573001234567',
   consultantName: 'Asesoría Lausser',
   catalogUrls: {
-    ésika: 'https://catalogos.somosbelcorp.com/co/esika/',
-    cyzone: 'https://catalogos.somosbelcorp.com/co/cyzone/',
-    lbel: 'https://catalogos.somosbelcorp.com/co/lbel/',
+    ésika: 'https://esika.tiendabelcorp.com.co/catalogo-digital',
+    cyzone: 'https://cyzone.tiendabelcorp.com.co/catalogo-digital',
+    lbel: 'https://lbel.tiendabelcorp.com.co/catalogo-digital',
   },
   catalogPdfUrls: {
-    ésika: 'https://catalogos.somosbelcorp.com/co/esika/',
-    cyzone: 'https://catalogos.somosbelcorp.com/co/cyzone/',
-    lbel: 'https://catalogos.somosbelcorp.com/co/lbel/',
+    ésika: 'https://esika.tiendabelcorp.com.co/catalogo-digital',
+    cyzone: 'https://cyzone.tiendabelcorp.com.co/catalogo-digital',
+    lbel: 'https://lbel.tiendabelcorp.com.co/catalogo-digital',
   },
 };

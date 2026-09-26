@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Plus, 
   Settings, 
@@ -19,7 +19,9 @@ import {
   Camera,
   Upload,
   X,
-  Loader2
+  Loader2,
+  ExternalLink,
+  RotateCcw
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import type { ActiveBrand, ProductCategory } from '../../types';
@@ -164,6 +166,13 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  // Enlaces oficiales por defecto de Belcorp Colombia
+  const OFFICIAL_CATALOG_URLS = {
+    ésika: 'https://esika.tiendabelcorp.com.co/catalogo-digital',
+    cyzone: 'https://cyzone.tiendabelcorp.com.co/catalogo-digital',
+    lbel: 'https://lbel.tiendabelcorp.com.co/catalogo-digital',
+  };
+
   // Campaign config form state
   const [campaignNumber, setCampaignNumber] = useState(campaignConfig.campaignNumber);
   const [closingDate, setClosingDate] = useState(() => {
@@ -176,9 +185,25 @@ export const AdminPanel: React.FC = () => {
   });
   const [whatsappNumber, setWhatsappNumber] = useState(campaignConfig.whatsappNumber);
   const [consultantName, setConsultantName] = useState(campaignConfig.consultantName);
-  const [esikaUrl, setEsikaUrl] = useState(campaignConfig.catalogUrls.ésika);
-  const [cyzoneUrl, setCyzoneUrl] = useState(campaignConfig.catalogUrls.cyzone);
-  const [lbelUrl, setLbelUrl] = useState(campaignConfig.catalogUrls.lbel);
+  const [esikaUrl, setEsikaUrl] = useState(campaignConfig.catalogUrls?.ésika || OFFICIAL_CATALOG_URLS.ésika);
+  const [cyzoneUrl, setCyzoneUrl] = useState(campaignConfig.catalogUrls?.cyzone || OFFICIAL_CATALOG_URLS.cyzone);
+  const [lbelUrl, setLbelUrl] = useState(campaignConfig.catalogUrls?.lbel || OFFICIAL_CATALOG_URLS.lbel);
+
+  // Sync state whenever campaignConfig changes in context
+  useEffect(() => {
+    setCampaignNumber(campaignConfig.campaignNumber);
+    try {
+      const d = new Date(campaignConfig.closingDate);
+      setClosingDate(d.toISOString().slice(0, 16));
+    } catch {
+      // ignore
+    }
+    setWhatsappNumber(campaignConfig.whatsappNumber);
+    setConsultantName(campaignConfig.consultantName);
+    setEsikaUrl(campaignConfig.catalogUrls?.ésika || OFFICIAL_CATALOG_URLS.ésika);
+    setCyzoneUrl(campaignConfig.catalogUrls?.cyzone || OFFICIAL_CATALOG_URLS.cyzone);
+    setLbelUrl(campaignConfig.catalogUrls?.lbel || OFFICIAL_CATALOG_URLS.lbel);
+  }, [campaignConfig]);
 
   const handleProductSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,15 +245,24 @@ export const AdminPanel: React.FC = () => {
 
   const handleCampaignSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const safeEsikaUrl = esikaUrl.trim() || OFFICIAL_CATALOG_URLS.ésika;
+    const safeCyzoneUrl = cyzoneUrl.trim() || OFFICIAL_CATALOG_URLS.cyzone;
+    const safeLbelUrl = lbelUrl.trim() || OFFICIAL_CATALOG_URLS.lbel;
+
     updateCampaignConfig({
-      campaignNumber,
+      campaignNumber: campaignNumber.trim(),
       closingDate: new Date(closingDate).toISOString(),
-      whatsappNumber,
-      consultantName,
+      whatsappNumber: whatsappNumber.trim(),
+      consultantName: consultantName.trim(),
       catalogUrls: {
-        ésika: esikaUrl,
-        cyzone: cyzoneUrl,
-        lbel: lbelUrl,
+        ésika: safeEsikaUrl,
+        cyzone: safeCyzoneUrl,
+        lbel: safeLbelUrl,
+      },
+      catalogPdfUrls: {
+        ésika: safeEsikaUrl,
+        cyzone: safeCyzoneUrl,
+        lbel: safeLbelUrl,
       },
     });
   };
@@ -893,48 +927,165 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             {/* Catalog URLs */}
-            <div className="pt-2 space-y-3">
-              <span className="text-xs font-bold text-neutral-700 uppercase block">
-                Enlaces Oficiales a las Revistas Digitales (Embed / Visor)
-              </span>
+            <div className="pt-2 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-100 pb-2">
+                <div>
+                  <span className="text-xs font-bold text-neutral-800 uppercase block">
+                    Enlaces a las Revistas Digitales (Apertura Directa)
+                  </span>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">
+                    Pega aquí tu enlace de catálogo personalizado de consultora Belcorp o mantén las URLs oficiales activas de Colombia.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEsikaUrl(OFFICIAL_CATALOG_URLS.ésika);
+                    setCyzoneUrl(OFFICIAL_CATALOG_URLS.cyzone);
+                    setLbelUrl(OFFICIAL_CATALOG_URLS.lbel);
+                  }}
+                  className="self-start sm:self-auto text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Restablecer todas a oficiales Colombia</span>
+                </button>
+              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-rose-700 mb-1">
-                  Revista Digital Ésika
-                </label>
+              {/* Informative alert box */}
+              <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs text-neutral-600 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-neutral-800">
+                  <ExternalLink className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Apertura externa garantizada en nueva pestaña</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-neutral-500">
+                  Los botones <strong>"📖 Ver y pasar Revista Digital"</strong> abren directamente en una nueva pestaña (<code>target="_blank" rel="noopener noreferrer"</code>) para evitar bloqueos por políticas de seguridad (CORS / X-Frame-Options) de Belcorp.
+                </p>
+              </div>
+
+              {/* Ésika Input Card */}
+              <div className="p-4 rounded-2xl border border-neutral-200 bg-white space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-rose-700 flex items-center gap-1.5 uppercase">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                    <span>Revista Digital Ésika</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEsikaUrl(OFFICIAL_CATALOG_URLS.ésika)}
+                      className="text-[11px] font-medium text-neutral-500 hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Restablecer a URL oficial de Colombia"
+                    >
+                      Oficial Colombia
+                    </button>
+                    {esikaUrl && (
+                      <a
+                        href={esikaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-rose-600 hover:underline inline-flex items-center gap-0.5"
+                      >
+                        <span>Probar</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="url"
                   required
+                  placeholder="https://esika.tiendabelcorp.com.co/catalogo-digital o tu link de consultora"
                   value={esikaUrl}
                   onChange={(e) => setEsikaUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-rose-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-rose-500 focus:outline-none"
                 />
+                <span className="text-[10px] text-neutral-400 block font-mono">
+                  Por defecto: {OFFICIAL_CATALOG_URLS.ésika}
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-fuchsia-700 mb-1">
-                  Revista Digital Cyzone
-                </label>
+              {/* Cyzone Input Card */}
+              <div className="p-4 rounded-2xl border border-neutral-200 bg-white space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-fuchsia-700 flex items-center gap-1.5 uppercase">
+                    <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-600"></span>
+                    <span>Revista Digital Cyzone</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCyzoneUrl(OFFICIAL_CATALOG_URLS.cyzone)}
+                      className="text-[11px] font-medium text-neutral-500 hover:text-fuchsia-600 transition-colors cursor-pointer"
+                      title="Restablecer a URL oficial de Colombia"
+                    >
+                      Oficial Colombia
+                    </button>
+                    {cyzoneUrl && (
+                      <a
+                        href={cyzoneUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-fuchsia-600 hover:underline inline-flex items-center gap-0.5"
+                      >
+                        <span>Probar</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="url"
                   required
+                  placeholder="https://cyzone.tiendabelcorp.com.co/catalogo-digital o tu link de consultora"
                   value={cyzoneUrl}
                   onChange={(e) => setCyzoneUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-rose-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-rose-500 focus:outline-none"
                 />
+                <span className="text-[10px] text-neutral-400 block font-mono">
+                  Por defecto: {OFFICIAL_CATALOG_URLS.cyzone}
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-amber-800 mb-1">
-                  Revista Digital L'Bel
-                </label>
+              {/* L'Bel Input Card */}
+              <div className="p-4 rounded-2xl border border-neutral-200 bg-white space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-amber-800 flex items-center gap-1.5 uppercase">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-700"></span>
+                    <span>Revista Digital L'Bel</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLbelUrl(OFFICIAL_CATALOG_URLS.lbel)}
+                      className="text-[11px] font-medium text-neutral-500 hover:text-amber-800 transition-colors cursor-pointer"
+                      title="Restablecer a URL oficial de Colombia"
+                    >
+                      Oficial Colombia
+                    </button>
+                    {lbelUrl && (
+                      <a
+                        href={lbelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-amber-800 hover:underline inline-flex items-center gap-0.5"
+                      >
+                        <span>Probar</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="url"
                   required
+                  placeholder="https://lbel.tiendabelcorp.com.co/catalogo-digital o tu link de consultora"
                   value={lbelUrl}
                   onChange={(e) => setLbelUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-rose-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 text-xs sm:text-sm focus:border-rose-500 focus:outline-none"
                 />
+                <span className="text-[10px] text-neutral-400 block font-mono">
+                  Por defecto: {OFFICIAL_CATALOG_URLS.lbel}
+                </span>
               </div>
             </div>
 
