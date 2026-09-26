@@ -23,6 +23,7 @@ const MainContent: React.FC = () => {
         if (isAdminAuthenticated) {
           setCurrentTab('admin');
         } else {
+          setCurrentTab('inmediata');
           setIsAdminLoginOpen(true);
         }
       }

@@ -1,5 +1,5 @@
 import type { CartItem, CustomerOrderInfo } from '../types';
-import { formatCurrency, getBrandNameDisplay } from './formatters';
+import { formatCurrency, getBrandNameDisplay, normalizeCOP } from './formatters';
 
 export interface WhatsAppOrderPayload {
   items: CartItem[];
@@ -17,8 +17,8 @@ export const generateWhatsAppLink = ({
   const stockItems = items.filter((item) => item.type === 'stock');
   const campaignItems = items.filter((item) => item.type === 'campaign');
 
-  const stockSubtotal = stockItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const campaignSubtotal = campaignItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const stockSubtotal = stockItems.reduce((acc, item) => acc + normalizeCOP(item.price) * item.quantity, 0);
+  const campaignSubtotal = campaignItems.reduce((acc, item) => acc + normalizeCOP(item.price) * item.quantity, 0);
   const total = stockSubtotal + campaignSubtotal;
 
   let message = `✨ *NUEVO PEDIDO LAUSSER* ✨\n`;

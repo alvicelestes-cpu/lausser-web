@@ -530,28 +530,28 @@ export const AdminPanel: React.FC = () => {
             <div className="p-4 sm:p-5 bg-neutral-50 rounded-2xl border border-neutral-200/80 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-neutral-800 uppercase mb-0.5 flex items-center gap-1.5">
-                  <ImageIcon className="w-4 h-4 text-rose-600" />
-                  <span>Foto del Producto (Cámara o Galería)</span>
+                  <Camera className="w-4 h-4 text-rose-600" />
+                  <span>Foto del Producto</span>
                 </label>
                 <p className="text-[11px] text-neutral-500">
-                  Sube una foto desde tu celular o computadora. Se comprimirá automáticamente para cargar rápido sin ocupar espacio.
+                  Toma una foto con tu cámara o selecciónala de tu galería. Se optimizará y guardará directamente en el producto.
                 </p>
               </div>
 
               {isCompressingImage && (
-                <div className="py-4 text-center flex items-center justify-center gap-2 text-xs font-bold text-rose-600 bg-rose-50/50 rounded-xl">
+                <div className="py-4 text-center flex items-center justify-center gap-2 text-xs font-bold text-rose-600 bg-rose-50 rounded-xl border border-rose-200">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Procesando y optimizando imagen...</span>
+                  <span>Optimizando foto para guardarla directamente...</span>
                 </div>
               )}
 
-              {/* If image is already selected / captured */}
+              {/* Preview in real-time if an image is selected */}
               {imageUrl ? (
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3.5 rounded-2xl border border-neutral-200">
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs">
                   <img
                     src={imageUrl}
-                    alt="Vista previa del producto"
-                    className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl border border-neutral-200 shrink-0 shadow-2xs"
+                    alt="Vista previa de la foto"
+                    className="w-28 h-28 object-cover rounded-xl border border-neutral-200 shrink-0 shadow-xs"
                   />
                   <div className="flex-1 space-y-2 text-center sm:text-left">
                     <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
@@ -559,69 +559,64 @@ export const AdminPanel: React.FC = () => {
                       <span>Foto lista para guardar</span>
                     </div>
                     <p className="text-[11px] text-neutral-400">
-                      Esta imagen se guardará directamente con el producto sin necesidad de enlaces externos.
+                      Esta imagen está procesada y se guardará directamente con el producto sin requerir URLs de internet.
                     </p>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
-                      >
+                    <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap pt-1">
+                      <label className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer transition-all shadow-xs active:scale-95">
                         <Camera className="w-3.5 h-3.5" />
-                        <span>Tomar otra</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Galería</span>
-                      </button>
+                        <span>Cambiar foto (Cámara / Galería)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="sr-only"
+                          onChange={handleImageUpload}
+                        />
+                      </label>
                       <button
                         type="button"
                         onClick={() => setImageUrl('')}
-                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
-                        <span>Quitar</span>
+                        <span>Quitar foto</span>
                       </button>
                     </div>
                   </div>
                 </div>
               ) : (
-                /* Buttons to capture or upload */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="p-4 rounded-xl border-2 border-dashed border-rose-300 hover:border-rose-500 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold text-xs flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Camera className="w-5 h-5 text-rose-600" />
-                    </div>
-                    <span>Tomar Foto con Cámara</span>
-                    <span className="text-[10px] font-normal text-rose-500">Usa la cámara del celular</span>
-                  </button>
+                <div className="space-y-3">
+                  {/* Botón principal visible con input file directo */}
+                  <label className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-sm cursor-pointer shadow-md hover:shadow-lg transition-all active:scale-98">
+                    <Camera className="w-5 h-5 text-rose-400" />
+                    <span>📷 Subir foto desde Cámara o Galería</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-4 rounded-xl border-2 border-dashed border-neutral-300 hover:border-neutral-500 bg-white hover:bg-neutral-50 text-neutral-700 font-bold text-xs flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Upload className="w-5 h-5 text-neutral-600" />
-                    </div>
-                    <span>Subir desde Galería o PC</span>
-                    <span className="text-[10px] font-normal text-neutral-400">Selecciona un archivo guardado</span>
-                  </button>
+                  {/* Opción para fototeca / archivos de PC */}
+                  <label className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-neutral-300 hover:bg-neutral-100 text-neutral-700 font-semibold text-xs cursor-pointer transition-all">
+                    <Upload className="w-4 h-4 text-neutral-500" />
+                    <span>Seleccionar archivo desde galería o computadora</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
                 </div>
               )}
 
               {/* Preset photos for Ésika / Cyzone / L'Bel */}
               <div className="pt-2 border-t border-neutral-200/60">
                 <span className="text-[11px] font-semibold text-neutral-600 block mb-2">
-                  O usa una foto de muestra oficial (Ésika, Cyzone, L'Bel):
+                  O selecciona una foto de muestra oficial (Ésika, Cyzone, L'Bel):
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {imagePresets.map((preset, index) => (
@@ -629,7 +624,11 @@ export const AdminPanel: React.FC = () => {
                       key={index}
                       type="button"
                       onClick={() => setImageUrl(preset.url)}
-                      className="text-xs px-2.5 py-1.5 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 rounded-xl border border-neutral-200 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      className={`text-xs px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                        imageUrl === preset.url
+                          ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
+                          : 'bg-white hover:bg-neutral-50 text-neutral-700 border-neutral-200'
+                      }`}
                     >
                       <ImageIcon className="w-3.5 h-3.5 text-neutral-400" />
                       <span>{preset.label}</span>
@@ -637,22 +636,6 @@ export const AdminPanel: React.FC = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Optional manual URL input */}
-              <details className="text-xs text-neutral-500 pt-1">
-                <summary className="cursor-pointer hover:text-neutral-800 font-medium">
-                  ¿Prefieres ingresar una URL externa de imagen? (Opcional)
-                </summary>
-                <div className="pt-2">
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 text-xs focus:border-rose-500 focus:outline-none bg-white"
-                  />
-                </div>
-              </details>
             </div>
 
             {/* Description */}

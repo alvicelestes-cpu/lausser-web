@@ -14,13 +14,11 @@ export const MobileNav: React.FC = () => {
   } = useStore();
 
   const handleAdminClick = () => {
-    if (currentTab === 'admin') {
-      setCurrentTab('inmediata');
-    } else if (isAdminAuthenticated) {
-      setCurrentTab('admin');
-    } else {
+    if (!isAdminAuthenticated) {
       setIsAdminLoginOpen(true);
+      return;
     }
+    setCurrentTab(currentTab === 'admin' ? 'inmediata' : 'admin');
   };
 
   return (

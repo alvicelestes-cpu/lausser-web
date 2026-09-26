@@ -79,18 +79,28 @@ const STORAGE_KEYS = {
   ADMIN_AUTH: 'lausser_admin_auth_v1',
 };
 
-const DEFAULT_ADMIN_PASSWORD = 'Lausser2026*';
+const DEFAULT_ADMIN_PASSWORD = 'Lausser2026';
+
+const sanitizeProducts = (list: Product[]): Product[] => {
+  return list.map((item) => ({
+    ...item,
+    price: item.price > 0 && item.price < 1000 ? Math.round(item.price * 1000) : Math.round(item.price),
+    discountPrice: item.discountPrice && item.discountPrice > 0 && item.discountPrice < 1000 
+      ? Math.round(item.discountPrice * 1000) 
+      : (item.discountPrice ? Math.round(item.discountPrice) : undefined),
+  }));
+};
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load products from localStorage or defaults
+  // Load products from localStorage or defaults and ensure prices are in full COP
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      if (saved !== null) return JSON.parse(saved);
+      if (saved !== null) return sanitizeProducts(JSON.parse(saved));
     } catch (e) {
       console.error('Failed to load products from storage', e);
     }
-    return initialProducts;
+    return sanitizeProducts(initialProducts);
   });
 
   // Load campaign config
@@ -108,7 +118,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.CART);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((item: CartItem) => ({
+          ...item,
+          price: item.price > 0 && item.price < 1000 ? Math.round(item.price * 1000) : Math.round(item.price),
+        }));
+      }
     } catch (e) {
       console.error('Failed to load cart', e);
     }
@@ -125,15 +141,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
 
-  // Admin authentication state
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
-    } catch (e) {
-      console.error('Failed to read admin auth from sessionStorage', e);
-      return false;
-    }
-  });
+  // Admin authentication state: SIEMPRE bloqueado por defecto al abrir la app o recargar
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
 
   // Sync to localStorage
@@ -312,13 +321,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const loginAdmin = (password: string): boolean => {
     const currentSaved = getStoredAdminPassword();
-    if (password === currentSaved) {
+    const cleanInput = password.trim();
+    if (cleanInput === currentSaved || (currentSaved === 'Lausser2026' && cleanInput === 'Lausser2026*')) {
       setIsAdminAuthenticated(true);
-      try {
-        sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
-      } catch (e) {
-        console.error('Failed to save admin auth to sessionStorage', e);
-      }
       return true;
     }
     return false;

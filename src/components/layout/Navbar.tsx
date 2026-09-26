@@ -32,15 +32,11 @@ export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleAdminAccess = () => {
-    if (currentTab === 'admin') {
-      setCurrentTab('inmediata');
-    } else {
-      if (isAdminAuthenticated) {
-        setCurrentTab('admin');
-      } else {
-        setIsAdminLoginOpen(true);
-      }
+    if (!isAdminAuthenticated) {
+      setIsAdminLoginOpen(true);
+      return;
     }
+    setCurrentTab(currentTab === 'admin' ? 'inmediata' : 'admin');
   };
 
   const brands: { id: Brand; label: string; activeColor: string }[] = [

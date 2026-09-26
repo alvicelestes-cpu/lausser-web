@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import type { CustomerOrderInfo } from '../../types';
-import { formatCurrency, getBrandTheme } from '../../utils/formatters';
+import { formatCurrency, getBrandTheme, normalizeCOP } from '../../utils/formatters';
 import { generateWhatsAppLink } from '../../utils/whatsapp';
 
 export const CartDrawer: React.FC = () => {
@@ -43,8 +43,8 @@ export const CartDrawer: React.FC = () => {
   const stockItems = cart.filter((item) => item.type === 'stock');
   const campaignItems = cart.filter((item) => item.type === 'campaign');
 
-  const stockSubtotal = stockItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const campaignSubtotal = campaignItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const stockSubtotal = stockItems.reduce((acc, item) => acc + normalizeCOP(item.price) * item.quantity, 0);
+  const campaignSubtotal = campaignItems.reduce((acc, item) => acc + normalizeCOP(item.price) * item.quantity, 0);
   const total = stockSubtotal + campaignSubtotal;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
